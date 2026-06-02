@@ -1,0 +1,138 @@
+.hero {
+    height: 100vh;
+    background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
+                url('../images/index/paperwall_15.png') center/cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    padding-top: 60px;
+}
+
+.hero h1 {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.hero p {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+}
+
+.cta-buttons button {
+    padding: 12px 30px;
+    border-radius: 25px;
+    border: none;
+    margin: 0 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.cta-buttons button:hover {
+    transform: scale(1.05);
+}
+
+.features {
+    padding: 100px 10%;
+    background: #f5f5f7;
+}
+
+.feature-cards {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 50px;
+}
+
+.card {
+    width: 30%;
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+}
+
+.card img {
+    height: 80px;
+    margin-bottom: 20px;
+}
+
+.highlight {
+    padding: 100px 10%;
+    display: flex;
+    align-items: center;
+}
+
+.highlight-text {
+    width: 50%;
+    padding-right: 5%;
+}
+
+.highlight-image {
+    width: 50%;
+    height: 500px;
+    background: url('../images/index/strawberry.jpg') center/cover;
+    border-radius: 20px;
+}
+
+
+.modern-cta {
+    background: #007300;
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 28px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.modern-cta::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.1);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.modern-cta:hover {
+    background: #005a00;
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,115,0,0.3);
+}
+
+.modern-cta:hover::after {
+    opacity: 1;
+}
+
+.modern-cta:active {
+    transform: scale(0.98);
+}
+
+.icon-arrow {
+    transition: transform 0.3s;
+}
+
+.modern-cta:hover .icon-arrow {
+    transform: translateX(2px);
+}
+
+@media (max-width: 768px) {
+    .modern-cta {
+        padding: 10px 24px;
+        font-size: 1rem;
+    }
+}
+

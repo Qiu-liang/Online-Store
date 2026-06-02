@@ -1,0 +1,372 @@
+/* 基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* 购物车容器 */
+        .cart-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 2rem auto;
+            display: grid;
+            grid-template-columns: 70% 28%;
+            gap: 2%;
+            padding-bottom: 3rem;
+        }
+        
+        .cart-header {
+            grid-column: 1 / -1;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid #eaeaea;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cart-header h1 {
+            font-size: 2.2rem;
+            color: #2c7744;
+            margin-bottom: 0.5rem;
+        }
+        
+        .cart-header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        /* 购物车商品项 */
+        .cart-items {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        
+        .cart-item {
+            display: flex;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s;
+        }
+        
+        .cart-item:hover {
+            background-color: #fafdfb;
+        }
+        
+        .item-image {
+            width: 100px;
+            height: 100px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px;
+            margin-right: 1.5rem;
+        }
+        
+        .item-details {
+            flex: 1;
+        }
+        
+        .product-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            color: #222;
+        }
+        
+        .product-description {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .product-price {
+            color: #e74c3c;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            margin: 0 1rem;
+            background: #f8f8f8;
+            border-radius: 30px;
+            padding: 0.25rem;
+        }
+        
+        .quantity-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: #e8f5e9;
+            color: #2c7744;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .quantity-btn:hover {
+            background: #2c7744;
+            color: white;
+        }
+        
+        .quantity-control span {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .product-cta {
+            background: #ffebee;
+            color: #e74c3c;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .product-cta:hover {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        /* 购物车摘要 */
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.8rem;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+            align-self: start;
+            position: sticky;
+            top: 120px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px dashed #e0e0e0;
+            font-size: 1.05rem;
+        }
+        
+        .total-price {
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin: 1rem 0;
+            border-bottom: none;
+            color: #2c7744;
+        }
+        
+        .checkout-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 1.2rem;
+            background: linear-gradient(135deg, #2c7744, #40a070);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(44, 119, 68, 0.3);
+        }
+        
+        .checkout-btn:hover {
+            background: linear-gradient(135deg, #246238, #359060);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44, 119, 68, 0.4);
+        }
+        
+        .icon-arrow {
+            transition: transform 0.3s;
+        }
+        
+        .checkout-btn:hover .icon-arrow {
+            transform: translateX(5px);
+        }
+        
+        .empty-cart {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+        }
+        
+        .empty-cart i {
+            font-size: 4rem;
+            color: #bdbdbd;
+            margin-bottom: 1.5rem;
+        }
+        
+        .empty-cart h3 {
+            font-size: 1.8rem;
+            color: #555;
+            margin-bottom: 1rem;
+        }
+        
+        .empty-cart p {
+            color: #888;
+            margin-bottom: 2rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .shop-btn {
+            display: inline-block;
+            padding: 0.9rem 2.5rem;
+            background: #2c7744;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .shop-btn:hover {
+            background: #246238;
+        }
+        
+        /* 页脚样式
+        footer {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding-top: 3rem;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 2rem;
+            padding: 0 15px;
+        }
+        
+        .footer-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .footer-section h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: #2c7744;
+        }
+        
+        .footer-section p {
+            margin: 0.8rem 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .footer-section i {
+            margin-right: 10px;
+            color: #2c7744;
+        }
+        
+        .social-icons {
+            display: flex;
+            gap: 15px;
+            margin-top: 1.5rem;
+        }
+        
+        .social-icons a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #34495e;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .social-icons a:hover {
+            background: #2c7744;
+            transform: translateY(-3px);
+        }
+        
+        .copyright {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-top: 1px solid #34495e;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #bdc3c7;
+        }
+         */
+        /* 响应式设计 */
+        @media (max-width: 900px) {
+            .cart-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .summary-card {
+                position: static;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .cart-item {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 1.2rem;
+            }
+            
+            .item-image {
+                width: 100%;
+                height: 200px;
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+            
+            .quantity-control {
+                margin: 1rem 0;
+            }
+            
+            .product-cta {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .nav-links {
+                gap: 1rem;
+                font-size: 0.92rem;
+            }
+        }

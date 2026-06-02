@@ -1,0 +1,82 @@
+/* 页脚样式 */
+footer {
+background: #2a3b36;
+color: #e0e0e0;
+padding: 50px 10% 30px;
+}
+
+.footer-content {
+display: flex;
+justify-content: space-between;
+flex-wrap: wrap;
+gap: 40px;
+margin-bottom: 30px;
+}
+
+.footer-section {
+min-width: 200px;
+}
+
+footer h3 {
+color: white;
+margin-bottom: 20px;
+font-size: 1.3rem;
+position: relative;
+padding-bottom: 10px;
+}
+
+footer h3::after {
+content: '';
+position: absolute;
+bottom: 0;
+left: 0;
+width: 40px;
+height: 2px;
+background: #5a9f72;
+}
+
+footer p {
+margin: 8px 0;
+display: flex;
+align-items: center;
+gap: 10px;
+}
+.social-icons {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.social-icons a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    color: white;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+}
+
+.social-icons a:hover {
+    background: #5a9f72;
+    transform: translateY(-3px);
+}
+
+.copyright {
+    text-align: center;
+    padding-top: 30px;
+    border-top: 1px solid #3f4d48;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+/* 响应式设计 - 页脚部分 */
+@media (max-width: 900px) {
+    .footer-content {
+        flex-direction: column;
+        gap: 30px;
+    }
+}
