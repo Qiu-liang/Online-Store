@@ -1,0 +1,131 @@
+/* 首页 */
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding-top: var(--nav-height);
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+                url('../images/index/paperwall_15.png') center / cover;
+    color: #fff;
+    text-align: center;
+}
+
+.hero h1 {
+    margin-bottom: 20px;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 600;
+}
+
+.hero p {
+    margin-bottom: 30px;
+    font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+}
+
+.cta-buttons button {
+    margin: 0 10px;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.cta-buttons button:hover {
+    transform: scale(1.05);
+}
+
+.features {
+    padding: 100px var(--page-padding);
+    background: var(--color-bg);
+}
+
+.feature-cards {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    margin-top: 50px;
+}
+
+.card {
+    width: 30%;
+    padding: 30px;
+    border-radius: 20px;
+    background: var(--color-surface);
+    text-align: center;
+}
+
+.feature-icon {
+    margin-bottom: 20px;
+    color: var(--color-green);
+    font-size: 3.5rem;
+}
+
+.card h3 {
+    margin-bottom: 10px;
+}
+
+.highlight {
+    display: flex;
+    align-items: center;
+    padding: 100px var(--page-padding);
+}
+
+.highlight-text {
+    width: 50%;
+    padding-right: 5%;
+}
+
+.highlight-text h2 {
+    font-size: 2.5rem;
+}
+
+.highlight-text p {
+    margin: 20px 0;
+    line-height: 1.6;
+}
+
+.highlight-image {
+    width: 50%;
+    height: 500px;
+    border-radius: 20px;
+    background: url('../images/index/strawberry.jpg') center / cover;
+}
+
+@media (max-width: 900px) {
+    .feature-cards {
+        flex-direction: column;
+    }
+
+    .card {
+        width: 100%;
+    }
+
+    .highlight {
+        flex-direction: column;
+        gap: 40px;
+    }
+
+    .highlight-text,
+    .highlight-image {
+        width: 100%;
+        padding-right: 0;
+    }
+
+    .highlight-image {
+        height: 300px;
+    }
+}
+
+@media (max-width: 600px) {
+    .features,
+    .highlight {
+        padding: 70px 6%;
+    }
+
+    .section-heading,
+    .highlight-text h2 {
+        font-size: 2rem;
+    }
+}

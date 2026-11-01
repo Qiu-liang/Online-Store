@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="绿源农业产品中心：新鲜蔬菜、时令水果与园艺花卉。">
+    <title>绿源农业 | 产品中心</title>
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/nav.css">
+    <link rel="stylesheet" href="css/footer.css">
+    <link rel="stylesheet" href="css/products.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a class="nav-brand" href="index.html">绿源农业</a>
+            <div class="nav-links">
+                <a href="index.html">首页</a>
+                <a href="products.html" class="active" aria-current="page">产品中心</a>
+                <a href="about.html">关于我们</a>
+                <a href="shopping.html">购物车</a>
+                <span class="nav-account" id="nav-account"><a href="login.html">登录</a></span>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="category-nav">
+            <div class="category-buttons" role="group" aria-label="产品分类">
+                <button type="button" data-category="vegetable" class="active">
+                    <i class="fas fa-carrot" aria-hidden="true"></i> 新鲜蔬菜
+                </button>
+                <button type="button" data-category="fruit">
+                    <i class="fas fa-apple-alt" aria-hidden="true"></i> 时令水果
+                </button>
+                <button type="button" data-category="flowers">
+                    <i class="fas fa-spa" aria-hidden="true"></i> 园艺花卉
+                </button>
+            </div>
+        </div>
+
+        <div id="content-container">
+            <!-- 产品列表由 js/products.js 动态渲染 -->
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="product-detail-modal" aria-hidden="true">
+        <div class="product-detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+            <button type="button" class="modal-close-btn" id="close-modal" aria-label="关闭详情">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+            <div class="detail-main">
+                <div class="detail-image-container" id="detail-image" role="img" aria-label="产品图片"></div>
+                <div class="detail-info">
+                    <h1 class="detail-title" id="detail-title"></h1>
+                    <div class="rating" id="detail-rating"></div>
+                    <p class="detail-description" id="detail-description"></p>
+                    <div class="detail-price" id="detail-price"></div>
+                    <div class="detail-meta" id="detail-meta"></div>
+                    <div class="detail-actions">
+                        <button type="button" class="detail-cta secondary" disabled title="收藏功能暂未开放">
+                            <i class="far fa-heart" aria-hidden="true"></i> 加入收藏
+                        </button>
+                        <button type="button" class="detail-cta">
+                            <i class="fas fa-shopping-cart" aria-hidden="true"></i> 加入购物车
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>产品与服务</h3>
+                <p><i class="fas fa-seedling" aria-hidden="true"></i> 当季蔬果</p>
+                <p><i class="fas fa-apple-alt" aria-hidden="true"></i> 时令水果</p>
+                <p><i class="fas fa-spa" aria-hidden="true"></i> 园艺花卉</p>
+            </div>
+            <div class="footer-section">
+                <h3>联系我们</h3>
+                <p><i class="fas fa-phone" aria-hidden="true"></i> 400-800-1234</p>
+                <p><i class="fas fa-envelope" aria-hidden="true"></i> dsjd@vcsc.org.cn</p>
+                <p><i class="fas fa-trophy" aria-hidden="true"></i> 世界职业院校技能大赛</p>
+            </div>
+            <div class="footer-section">
+                <h3>关注我们</h3>
+                <div class="social-icons">
+                    <a href="#" aria-label="微信"><i class="fab fa-weixin" aria-hidden="true"></i></a>
+                    <a href="#" aria-label="微博"><i class="fab fa-weibo" aria-hidden="true"></i></a>
+                    <a href="#" aria-label="抖音"><i class="fab fa-tiktok" aria-hidden="true"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>© 2025 绿源农业 版权所有 | 有机食品认证号: OC-2023-12345</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth-nav.js"></script>
+    <script src="js/cart-store.js"></script>
+    <script src="js/products.js"></script>
+</body>
+</html>

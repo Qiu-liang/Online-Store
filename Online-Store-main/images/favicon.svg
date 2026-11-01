@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="绿源农业">
+    <rect width="64" height="64" rx="14" fill="#007300"/>
+    <path d="M47 14C29 14 17 23 17 37c0 7 5 12 12 12 14 0 20-13 18-35z" fill="#bfe8c4"/>
+    <path d="M20 47c6-12 14-19 25-25" fill="none" stroke="#007300" stroke-width="3" stroke-linecap="round"/>
+    <path d="M31 31c-5-1-8-4-10-8M34 27c4-1 7-3 9-6" fill="none" stroke="#007300" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

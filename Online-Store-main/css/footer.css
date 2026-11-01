@@ -1,0 +1,82 @@
+/* 全站页脚 */
+footer {
+    padding: 50px var(--page-padding) 30px;
+    background: #2a3b36;
+    color: #e0e0e0;
+}
+
+.footer-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 40px;
+    margin-bottom: 30px;
+}
+
+.footer-section {
+    min-width: 200px;
+}
+
+footer h3 {
+    position: relative;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    color: #fff;
+    font-size: 1.3rem;
+}
+
+footer h3::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: #5a9f72;
+}
+
+footer p {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+}
+
+.social-icons {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.social-icons a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+}
+
+.social-icons a:hover {
+    background: #5a9f72;
+    transform: translateY(-3px);
+}
+
+.copyright {
+    padding-top: 30px;
+    border-top: 1px solid #3f4d48;
+    color: #aaa;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .footer-content {
+        flex-direction: column;
+        gap: 30px;
+    }
+}
