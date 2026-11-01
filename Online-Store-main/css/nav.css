@@ -31,6 +31,7 @@ nav {
 
 .nav-links {
     display: flex;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 30px;
 }
@@ -92,6 +93,30 @@ nav {
 
     .nav-links a {
         font-size: 12px;
+    }
+}
+
+@media (max-width: 360px) {
+    .nav-container {
+        gap: 8px;
+    }
+
+    .nav-brand {
+        font-size: 1rem;
+    }
+
+    .nav-links {
+        gap: 8px;
+    }
+
+    .nav-links a,
+    .nav-account a {
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .nav-account {
+        gap: 8px;
     }
 }
 

@@ -84,6 +84,32 @@
     font-size: 0.8rem;
 }
 
+/* 订单状态徽章配色（管理员可在后台修改状态，按状态区分颜色） */
+.order-status.status-pending {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.order-status.status-paid {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.order-status.status-shipped {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.order-status.status-done {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.order-status.status-cancelled {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
 .order-head time {
     margin-left: auto;
 }
@@ -121,12 +147,12 @@
 }
 
 .order-item-info p {
-    color: #888;
+    color: #6e6e73;
     font-size: 0.9rem;
 }
 
 .order-item-total {
-    color: #e74c3c;
+    color: #c62828;
     font-weight: 600;
 }
 
@@ -141,7 +167,7 @@
 }
 
 .order-shipping {
-    color: #888;
+    color: #6e6e73;
     font-size: 0.9rem;
 }
 
@@ -174,7 +200,7 @@
 
 .orders-empty p {
     margin-bottom: 1.5rem;
-    color: #888;
+    color: #6e6e73;
 }
 
 .shop-btn {

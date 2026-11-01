@@ -2,6 +2,8 @@ package api
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -14,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"online-store/server/internal/auth"
 	"online-store/server/internal/config"
 	"online-store/server/internal/database"
 	"online-store/server/internal/store"
@@ -26,6 +29,16 @@ type testClient struct {
 	client *http.Client
 }
 
+// testDB 持有测试环境的数据库与存储，便于测试直接构造管理员等数据。
+type testDB struct {
+	db       *sql.DB
+	users    *store.UserStore
+	orders   *store.OrderStore
+	products *store.ProductStore
+}
+
+var currentDB *testDB
+
 func newTestEnv(t *testing.T) *testClient {
 	t.Helper()
 
@@ -34,23 +47,31 @@ func newTestEnv(t *testing.T) *testClient {
 		t.Fatalf("初始化测试数据库: %v", err)
 	}
 	t.Cleanup(func() { db.Close() })
+	currentDB = &testDB{
+		db:       db,
+		users:    store.NewUserStore(db),
+		orders:   store.NewOrderStore(db),
+		products: store.NewProductStore(db),
+	}
 
 	cfg := &config.Config{
-		Port:        "0",
-		FrontendDir: newStaticDir(t),
-		DBPath:      "unused",
-		SessionTTL:  time.Hour,
+		Port:            "0",
+		FrontendDir:     newStaticDir(t),
+		DBPath:          "unused",
+		SessionTTL:      time.Hour,
+		AdminSessionTTL: time.Hour,
 	}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	server := NewServer(
 		cfg,
 		logger,
-		store.NewUserStore(db),
+		currentDB.users,
 		store.NewSessionStore(db),
-		store.NewProductStore(db),
+		currentDB.products,
 		store.NewCartStore(db),
-		store.NewOrderStore(db),
+		currentDB.orders,
+		store.NewStatsStore(db),
 	)
 	ts := httptest.NewServer(server.Handler())
 	t.Cleanup(ts.Close)
@@ -60,6 +81,41 @@ func newTestEnv(t *testing.T) *testClient {
 		t.Fatalf("创建 CookieJar: %v", err)
 	}
 	return &testClient{t: t, server: ts, client: &http.Client{Jar: jar}}
+}
+
+// newClient 基于同一个测试服务器创建独立 Cookie 会话的客户端，
+// 用于在同一环境里同时模拟普通用户与管理员。
+func (c *testClient) newClient() *testClient {
+	c.t.Helper()
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		c.t.Fatalf("创建 CookieJar: %v", err)
+	}
+	return &testClient{t: c.t, server: c.server, client: &http.Client{Jar: jar}}
+}
+
+// createAdmin 直接在数据库中创建管理员账号。
+func (c *testClient) createAdmin(email, password string) {
+	c.t.Helper()
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		c.t.Fatalf("哈希管理员密码: %v", err)
+	}
+	if _, err := currentDB.users.CreateAdmin(context.Background(), "管理员", email, hash); err != nil {
+		c.t.Fatalf("创建管理员: %v", err)
+	}
+}
+
+// createUser 直接在数据库中创建普通用户账号。
+func (c *testClient) createUser(email, password string) {
+	c.t.Helper()
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		c.t.Fatalf("哈希用户密码: %v", err)
+	}
+	if _, err := currentDB.users.Create(context.Background(), "用户", email, hash); err != nil {
+		c.t.Fatalf("创建用户: %v", err)
+	}
 }
 
 // newStaticDir 创建一个带 index.html 与 js/app.js 的临时前端目录。

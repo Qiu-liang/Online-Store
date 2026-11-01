@@ -40,6 +40,11 @@ body {
     box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
 }
 
+/* 空车时不要留下右侧汇总列的空位 */
+.cart-container.cart-empty .cart-items {
+    grid-column: 1 / -1;
+}
+
 .cart-item {
     display: flex;
     align-items: center;
@@ -57,12 +62,13 @@ body {
 }
 
 .item-image {
+    display: block;
     width: 100px;
     height: 100px;
     margin-right: 1.5rem;
     border-radius: 8px;
-    background-position: center;
-    background-size: cover;
+    background: #f1f1f3;
+    object-fit: cover;
 }
 
 .item-details {
@@ -78,7 +84,7 @@ body {
 }
 
 .product-price {
-    color: #e74c3c;
+    color: #c62828;
     font-size: 1.1rem;
     font-weight: 600;
 }
@@ -112,6 +118,13 @@ body {
     color: #fff;
 }
 
+.quantity-btn:disabled,
+.quantity-btn:disabled:hover {
+    background: #f1f1f3;
+    color: #a1a1a6;
+    cursor: not-allowed;
+}
+
 .quantity-control span {
     min-width: 40px;
     font-weight: 600;
@@ -123,14 +136,14 @@ body {
     border: none;
     border-radius: 6px;
     background: #ffebee;
-    color: #e74c3c;
+    color: #c62828;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s;
 }
 
 .cart-item .product-cta:hover {
-    background: #e74c3c;
+    background: #b71c1c;
     color: #fff;
 }
 
@@ -142,6 +155,11 @@ body {
     border-radius: 12px;
     background: var(--color-surface);
     box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* 结算面板横跨两列；此时汇总卡停止吸顶，避免覆盖表单 */
+.cart-container.checkout-open .summary-card {
+    position: static;
 }
 
 .summary-row {
@@ -161,7 +179,7 @@ body {
 }
 
 .discount {
-    color: #ff3b30;
+    color: #d92d20;
 }
 
 .checkout-btn {
@@ -216,17 +234,44 @@ body {
 .empty-cart p {
     max-width: 500px;
     margin: 0 auto 2rem;
-    color: #888;
+    color: #6e6e73;
+}
+
+.empty-cart-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.shop-btn.shop-btn-secondary {
+    border: 1px solid #2c7744;
+    background: #fff;
+    color: #2c7744;
+}
+
+.shop-btn.shop-btn-secondary:hover {
+    background: #e8f5e9;
+}
+
+.cart-warning {
+    margin: 0;
+    padding: 14px 20px;
+    background: #fff8e1;
+    color: #8a5a00;
+    font-size: 0.95rem;
 }
 
 .shop-btn {
     display: inline-block;
     padding: 0.9rem 2.5rem;
+    border: none;
     border-radius: 8px;
     background: #2c7744;
     color: #fff;
     font-weight: 600;
     text-decoration: none;
+    cursor: pointer;
     transition: background 0.3s;
 }
 
@@ -237,6 +282,7 @@ body {
 /* 结算表单 */
 .checkout-panel {
     grid-column: 1 / -1;
+    scroll-margin-top: calc(var(--nav-height) + 16px);
     padding: 1.8rem;
     border-radius: 12px;
     background: var(--color-surface);

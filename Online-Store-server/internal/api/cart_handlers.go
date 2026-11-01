@@ -53,7 +53,7 @@ func (s *Server) handleAddCartItem(w http.ResponseWriter, r *http.Request) {
 
 	cart, err := s.carts.AddItem(r.Context(), currentUser(r).ID, req.ProductID, req.Quantity)
 	if errors.Is(err, store.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "product_not_found", "商品不存在")
+		writeError(w, http.StatusNotFound, "product_not_found", "商品不存在或已下架")
 		return
 	}
 	if err != nil {

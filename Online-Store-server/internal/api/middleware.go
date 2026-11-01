@@ -60,13 +60,18 @@ const contentSecurityPolicy = "default-src 'self'; " +
 	"connect-src 'self'; " +
 	"object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
-// withSecureHeaders 设置基础安全响应头。
+// withSecureHeaders 设置基础安全响应头；后台接口与页面响应禁止缓存。
 func (s *Server) withSecureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
+		if strings.HasPrefix(r.URL.Path, "/api/admin/") || r.URL.Path == "/admin" ||
+			r.URL.Path == "/admin/" || strings.HasPrefix(r.URL.Path, "/admin.html") ||
+			strings.HasPrefix(r.URL.Path, "/admin-login.html") {
+			w.Header().Set("Cache-Control", "no-store")
+		}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -113,18 +118,43 @@ func (s *Server) withSameOrigin(next http.Handler) http.Handler {
 	})
 }
 
+// authenticate 解析会话 Cookie 并校验，返回当前用户；
+// 未携带 Cookie 与会话无效统一返回 401 错误（写入响应）。
+func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) (*models.User, bool) {
+	cookie, err := r.Cookie(auth.CookieName)
+	if err != nil || cookie.Value == "" {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "请先登录")
+		return nil, false
+	}
+
+	user, err := s.sessions.Validate(r.Context(), auth.HashToken(cookie.Value))
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "登录已过期，请重新登录")
+		return nil, false
+	}
+	return user, true
+}
+
 // withAuth 要求有效会话，并把用户放入请求上下文。
 func (s *Server) withAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie(auth.CookieName)
-		if err != nil || cookie.Value == "" {
-			writeError(w, http.StatusUnauthorized, "unauthorized", "请先登录")
+		user, ok := s.authenticate(w, r)
+		if !ok {
 			return
 		}
+		next(w, r.WithContext(context.WithValue(r.Context(), userContextKey, user)))
+	}
+}
 
-		user, err := s.sessions.Validate(r.Context(), auth.HashToken(cookie.Value))
-		if err != nil {
-			writeError(w, http.StatusUnauthorized, "unauthorized", "登录已过期，请重新登录")
+// withAdmin 要求有效会话且为管理员；非管理员返回 403 not_admin。
+func (s *Server) withAdmin(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := s.authenticate(w, r)
+		if !ok {
+			return
+		}
+		if user.Role != models.RoleAdmin {
+			writeError(w, http.StatusForbidden, "not_admin", "需要管理员权限")
 			return
 		}
 		next(w, r.WithContext(context.WithValue(r.Context(), userContextKey, user)))
@@ -173,15 +203,25 @@ func (l *rateLimiter) allow(key string) bool {
 	return true
 }
 
-// withRateLimit 对登录/注册做按 IP 限流。
-func (s *Server) withRateLimit(next http.HandlerFunc) http.HandlerFunc {
+// rateLimited 用指定限流器对处理器做按 IP 限流。
+func (s *Server) rateLimited(limiter *rateLimiter, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !s.authLimiter.allow(clientIP(r)) {
+		if !limiter.allow(clientIP(r)) {
 			writeError(w, http.StatusTooManyRequests, "rate_limited", "尝试过于频繁，请稍后再试")
 			return
 		}
 		next(w, r)
 	}
+}
+
+// withRateLimit 对客户登录/注册做按 IP 限流。
+func (s *Server) withRateLimit(next http.HandlerFunc) http.HandlerFunc {
+	return s.rateLimited(s.authLimiter, next)
+}
+
+// withAdminRateLimit 对管理员登录做独立限流，避免客户登录耗尽管理员额度。
+func (s *Server) withAdminRateLimit(next http.HandlerFunc) http.HandlerFunc {
+	return s.rateLimited(s.adminAuthLimiter, next)
 }
 
 func clientIP(r *http.Request) string {

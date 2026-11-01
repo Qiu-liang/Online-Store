@@ -12,6 +12,7 @@
     }
 
     const itemsContainer = document.getElementById('cart-items-container');
+    const cartContainer = document.querySelector('.cart-container');
     const countLabel = document.getElementById('cart-count');
     const subtotalLabel = document.getElementById('subtotal');
     const totalLabel = document.getElementById('total');
@@ -37,8 +38,8 @@
 
         return `
             <div class="cart-item">
-                <div class="item-image" style="background-image: ${api.cssUrl(item.img)}"
-                     role="img" aria-label="${safeTitle}"></div>
+                <img class="item-image" src="${api.escapeHtml(item.img)}" alt="${safeTitle}"
+                     loading="lazy" decoding="async">
                 <div class="item-details">
                     <h3 class="product-title">${safeTitle}</h3>
                     <div class="product-price">${safePrice}</div>
@@ -55,30 +56,71 @@
         `;
     }
 
+    function emptyCartMarkup() {
+        const error = cart.sessionError;
+        if (error && error.status !== 401) {
+            return `
+                <div class="empty-cart">
+                    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                    <h3>购物车加载失败</h3>
+                    <p>${api.escapeHtml(error.message || '无法连接服务器，请稍后再试')}</p>
+                    <button type="button" class="shop-btn" id="reload-cart">重新加载</button>
+                </div>
+            `;
+        }
+
+        if (cart.mode === 'guest') {
+            return `
+                <div class="empty-cart">
+                    <i class="fas fa-shopping-cart" aria-hidden="true"></i>
+                    <h3>登录后查看您的购物车</h3>
+                    <p>当前未登录。若您之前登录过，购物车中的商品仍保存在账户中。</p>
+                    <div class="empty-cart-actions">
+                        <a href="login.html?next=shopping.html" class="shop-btn">去登录</a>
+                        <a href="products.html" class="shop-btn shop-btn-secondary">去逛逛</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="empty-cart">
+                <i class="fas fa-shopping-cart" aria-hidden="true"></i>
+                <h3>您的购物车是空的</h3>
+                <p>快去挑选新鲜有机的蔬菜水果，丰富您的健康生活吧！</p>
+                <a href="products.html" class="shop-btn">去逛逛</a>
+            </div>
+        `;
+    }
+
     function renderCart() {
         countLabel.textContent = `您已选择 ${cart.getCount()} 件商品`;
 
         if (cart.items.length === 0) {
-            itemsContainer.innerHTML = `
-                <div class="empty-cart">
-                    <i class="fas fa-shopping-cart" aria-hidden="true"></i>
-                    <h3>您的购物车是空的</h3>
-                    <p>快去挑选新鲜有机的蔬菜水果，丰富您的健康生活吧！</p>
-                    <a href="products.html" class="shop-btn">去逛逛</a>
-                </div>
-            `;
+            cartContainer.classList.add('cart-empty');
+            cartContainer.classList.remove('checkout-open');
+            itemsContainer.innerHTML = emptyCartMarkup();
             summaryCard.hidden = true;
             checkoutPanel.hidden = true;
             return;
         }
 
-        itemsContainer.innerHTML = cart.items.map(cartItemMarkup).join('');
+        cartContainer.classList.remove('cart-empty');
+        const warning = cart.sessionError && cart.sessionError.status !== 401
+            ? `<p class="cart-warning">${api.escapeHtml(cart.sessionError.message || '无法连接服务器，显示的是本地购物车，可能不是最新数据。')}</p>`
+            : '';
+        itemsContainer.innerHTML = warning + cart.items.map(cartItemMarkup).join('');
         summaryCard.hidden = false;
         subtotalLabel.textContent = formatYuan(cart.getSubtotal());
         totalLabel.textContent = formatYuan(cart.getTotal());
     }
 
     itemsContainer.addEventListener('click', (event) => {
+        if (event.target.closest('#reload-cart')) {
+            window.location.reload();
+            return;
+        }
+
         const button = event.target.closest('button[data-id]');
         if (!button) {
             return;
@@ -114,11 +156,13 @@
             return;
         }
 
+        cartContainer.classList.add('checkout-open');
         checkoutPanel.hidden = false;
         checkoutPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     checkoutCancel.addEventListener('click', () => {
+        cartContainer.classList.remove('checkout-open');
         checkoutPanel.hidden = true;
         checkoutMessage.hidden = true;
     });

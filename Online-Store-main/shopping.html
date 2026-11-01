@@ -68,17 +68,20 @@
                     <div class="form-field">
                         <label for="shipping-name">收货人</label>
                         <input id="shipping-name" name="shippingName" type="text"
-                               placeholder="请输入收货人姓名" minlength="2" maxlength="30" required>
+                               placeholder="请输入收货人姓名" minlength="2" maxlength="30"
+                               autocomplete="name" required>
                     </div>
                     <div class="form-field">
                         <label for="shipping-phone">联系电话</label>
                         <input id="shipping-phone" name="shippingPhone" type="tel"
-                               placeholder="请输入手机号或固定电话" minlength="6" maxlength="20" required>
+                               placeholder="请输入手机号或固定电话" minlength="6" maxlength="20"
+                               inputmode="tel" autocomplete="tel" required>
                     </div>
                     <div class="form-field">
                         <label for="shipping-address">收货地址</label>
                         <input id="shipping-address" name="shippingAddress" type="text"
-                               placeholder="省市区 + 详细地址" minlength="5" maxlength="200" required>
+                               placeholder="省市区 + 详细地址" minlength="5" maxlength="200"
+                               autocomplete="street-address" required>
                     </div>
                 </div>
                 <p class="form-message" id="checkout-message" role="alert" hidden></p>

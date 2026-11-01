@@ -15,6 +15,7 @@
     const message = document.getElementById('form-message');
 
     function switchForm(formType) {
+        hideMessage();
         tabs.forEach((tab) => {
             const isActive = tab.dataset.form === formType;
             tab.classList.toggle('active', isActive);

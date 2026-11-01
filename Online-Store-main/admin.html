@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="绿源农业管理后台。">
+    <title>管理后台 | 绿源农业</title>
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <script src="js/api.js" defer></script>
+    <script src="js/admin.js" defer></script>
+</head>
+<body class="admin-body">
+    <noscript><p class="admin-noscript">管理后台需要启用 JavaScript 才能使用。</p></noscript>
+
+    <div class="admin-layout" id="admin-app" hidden>
+        <aside class="admin-sidebar">
+            <div class="admin-brand">
+                <i class="fas fa-seedling" aria-hidden="true"></i>
+                <div>
+                    <strong>绿源农业</strong>
+                    <span>管理后台</span>
+                </div>
+            </div>
+            <nav class="admin-nav" aria-label="后台导航">
+                <a href="#dashboard" data-view="dashboard" class="admin-nav-link">
+                    <i class="fas fa-chart-pie" aria-hidden="true"></i> 概览
+                </a>
+                <a href="#products" data-view="products" class="admin-nav-link">
+                    <i class="fas fa-box" aria-hidden="true"></i> 商品管理
+                </a>
+                <a href="#users" data-view="users" class="admin-nav-link">
+                    <i class="fas fa-users" aria-hidden="true"></i> 用户管理
+                </a>
+                <a href="#orders" data-view="orders" class="admin-nav-link">
+                    <i class="fas fa-receipt" aria-hidden="true"></i> 订单管理
+                </a>
+            </nav>
+            <div class="admin-sidebar-foot">
+                <a href="index.html"><i class="fas fa-store" aria-hidden="true"></i> 返回商城</a>
+            </div>
+        </aside>
+
+        <div class="admin-main">
+            <header class="admin-topbar">
+                <h2 class="admin-view-title" id="view-title">概览</h2>
+                <div class="admin-topbar-right">
+                    <span class="admin-who" id="admin-who"></span>
+                    <button type="button" class="admin-btn admin-btn-ghost" id="logout-btn">
+                        <i class="fas fa-right-from-bracket" aria-hidden="true"></i> 退出登录
+                    </button>
+                </div>
+            </header>
+
+            <main class="admin-content">
+                <!-- 概览 -->
+                <section id="view-dashboard" class="admin-view" hidden>
+                    <div class="admin-toolbar">
+                        <button type="button" class="admin-btn" id="stats-refresh">
+                            <i class="fas fa-rotate" aria-hidden="true"></i> 刷新
+                        </button>
+                    </div>
+                    <div class="stat-grid" id="stat-grid" hidden>
+                        <div class="stat-card">
+                            <span class="stat-label">用户数</span>
+                            <strong class="stat-value" id="stat-users">-</strong>
+                            <span class="stat-extra" id="stat-admins"></span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">商品数</span>
+                            <strong class="stat-value" id="stat-products">-</strong>
+                            <span class="stat-extra" id="stat-active-products"></span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">订单数</span>
+                            <strong class="stat-value" id="stat-orders">-</strong>
+                            <span class="stat-extra" id="stat-pending-orders"></span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">销售额（不含已取消）</span>
+                            <strong class="stat-value" id="stat-revenue">-</strong>
+                            <span class="stat-extra" id="stat-today-orders"></span>
+                        </div>
+                    </div>
+                    <div class="admin-error" id="stats-error" role="alert" hidden></div>
+                    <div class="admin-card">
+                        <h3 class="admin-card-title">最近订单</h3>
+                        <div class="table-wrap" id="recent-orders-wrap">
+                            <table class="admin-table" aria-label="最近订单">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">订单号</th>
+                                        <th scope="col">买家</th>
+                                        <th scope="col">件数</th>
+                                        <th scope="col">金额</th>
+                                        <th scope="col">状态</th>
+                                        <th scope="col">下单时间</th>
+                                        <th scope="col">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-orders-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 商品管理 -->
+                <section id="view-products" class="admin-view" hidden>
+                    <div class="admin-toolbar">
+                        <input type="search" id="product-search" class="admin-input admin-input-search"
+                               placeholder="搜索标题 / ID" aria-label="搜索商品">
+                        <select id="product-category" class="admin-input" aria-label="分类筛选">
+                            <option value="">全部分类</option>
+                        </select>
+                        <select id="product-active" class="admin-input" aria-label="状态筛选">
+                            <option value="all">全部状态</option>
+                            <option value="true">已上架</option>
+                            <option value="false">已下架</option>
+                        </select>
+                        <button type="button" class="admin-btn" id="product-refresh">
+                            <i class="fas fa-rotate" aria-hidden="true"></i> 刷新
+                        </button>
+                        <button type="button" class="admin-btn admin-btn-primary" id="product-add">
+                            <i class="fas fa-plus" aria-hidden="true"></i> 新增商品
+                        </button>
+                    </div>
+                    <div class="admin-error" id="products-error" role="alert" hidden></div>
+                    <div class="admin-card">
+                        <div class="table-wrap">
+                            <table class="admin-table" aria-label="商品列表">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">图片</th>
+                                        <th scope="col">商品</th>
+                                        <th scope="col">分类</th>
+                                        <th scope="col">价格</th>
+                                        <th scope="col">评分</th>
+                                        <th scope="col">状态</th>
+                                        <th scope="col">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="admin-pagination" id="products-pagination"></div>
+                    </div>
+                </section>
+
+                <!-- 用户管理 -->
+                <section id="view-users" class="admin-view" hidden>
+                    <div class="admin-toolbar">
+                        <input type="search" id="user-search" class="admin-input admin-input-search"
+                               placeholder="搜索用户名 / 邮箱" aria-label="搜索用户">
+                        <select id="user-role" class="admin-input" aria-label="角色筛选">
+                            <option value="all">全部角色</option>
+                            <option value="admin">管理员</option>
+                            <option value="user">普通用户</option>
+                        </select>
+                        <button type="button" class="admin-btn" id="user-refresh">
+                            <i class="fas fa-rotate" aria-hidden="true"></i> 刷新
+                        </button>
+                    </div>
+                    <div class="admin-error" id="users-error" role="alert" hidden></div>
+                    <div class="admin-card">
+                        <div class="table-wrap">
+                            <table class="admin-table" aria-label="用户列表">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">ID</th>
+                                        <th scope="col">用户名</th>
+                                        <th scope="col">邮箱</th>
+                                        <th scope="col">角色</th>
+                                        <th scope="col">订单数</th>
+                                        <th scope="col">累计消费</th>
+                                        <th scope="col">注册时间</th>
+                                        <th scope="col">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="admin-pagination" id="users-pagination"></div>
+                    </div>
+                </section>
+
+                <!-- 订单管理 -->
+                <section id="view-orders" class="admin-view" hidden>
+                    <div class="admin-toolbar">
+                        <select id="order-status" class="admin-input" aria-label="状态筛选">
+                            <option value="all">全部状态</option>
+                            <option value="pending">待发货</option>
+                            <option value="paid">已支付</option>
+                            <option value="shipped">已发货</option>
+                            <option value="done">已完成</option>
+                            <option value="cancelled">已取消</option>
+                        </select>
+                        <input type="search" id="order-search" class="admin-input admin-input-search"
+                               placeholder="搜索订单号 / 买家 / 收货人 / 电话" aria-label="搜索订单">
+                        <button type="button" class="admin-btn admin-btn-ghost" id="order-user-filter" hidden></button>
+                        <button type="button" class="admin-btn" id="order-refresh">
+                            <i class="fas fa-rotate" aria-hidden="true"></i> 刷新
+                        </button>
+                    </div>
+                    <div class="admin-error" id="orders-error" role="alert" hidden></div>
+                    <div class="admin-card">
+                        <div class="table-wrap">
+                            <table class="admin-table" aria-label="订单列表">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">订单号</th>
+                                        <th scope="col">买家</th>
+                                        <th scope="col">收货人</th>
+                                        <th scope="col">件数</th>
+                                        <th scope="col">金额</th>
+                                        <th scope="col">状态</th>
+                                        <th scope="col">下单时间</th>
+                                        <th scope="col">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orders-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="admin-pagination" id="orders-pagination"></div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- 全页错误（网络故障） -->
+    <div class="admin-fullpage-error" id="admin-fatal" role="alert" hidden>
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        <h2>无法连接服务器</h2>
+        <p id="admin-fatal-message">请确认后端服务已启动。</p>
+        <button type="button" class="admin-btn admin-btn-primary" id="admin-retry">重试</button>
+    </div>
+
+    <!-- 商品编辑弹窗 -->
+    <div class="admin-modal" id="product-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title" hidden>
+        <div class="admin-modal-mask" data-close-modal></div>
+        <div class="admin-modal-panel">
+            <header class="admin-modal-head">
+                <h3 id="product-modal-title">新增商品</h3>
+                <button type="button" class="admin-modal-close" data-close-modal aria-label="关闭">
+                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                </button>
+            </header>
+            <form id="product-form" class="admin-modal-body" novalidate>
+                <div class="form-row">
+                    <div class="form-field form-field-wide">
+                        <label for="pf-title">标题 *</label>
+                        <input type="text" id="pf-title" name="title" maxlength="80" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="pf-category">分类 *</label>
+                        <select id="pf-category" name="category" required>
+                            <option value="">请选择</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="pf-type">类型 *</label>
+                        <select id="pf-type" name="type" required>
+                            <option value="">请选择</option>
+                            <option value="蔬菜">蔬菜</option>
+                            <option value="水果">水果</option>
+                            <option value="花卉">花卉</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="pf-price">价格（元）*</label>
+                        <input type="number" id="pf-price" name="price" min="0" max="1000000" step="0.01" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="pf-unit">单位 *</label>
+                        <input type="text" id="pf-unit" name="unit" maxlength="20" placeholder="如 500g" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="pf-rating">评分（0-5）</label>
+                        <input type="number" id="pf-rating" name="rating" min="0" max="5" step="0.1">
+                    </div>
+                    <div class="form-field">
+                        <label for="pf-sort">排序值</label>
+                        <input type="number" id="pf-sort" name="sortOrder" min="0" step="1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field form-field-wide">
+                        <label for="pf-image">图片路径 *（站内相对路径，如 images/Products/tomato.jpg）</label>
+                        <input type="text" id="pf-image" name="image" maxlength="300" required>
+                        <img class="admin-image-preview" id="pf-image-preview" alt="图片预览" hidden>
+                    </div>
+                    <div class="form-field">
+                        <label for="pf-active">上架状态</label>
+                        <select id="pf-active" name="active">
+                            <option value="true">上架</option>
+                            <option value="false">下架</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field form-field-wide">
+                        <label for="pf-description">简介（≤200 字）</label>
+                        <textarea id="pf-description" name="description" rows="2" maxlength="200"></textarea>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field form-field-wide">
+                        <label for="pf-detail">详情（≤2000 字）</label>
+                        <textarea id="pf-detail" name="detail" rows="4" maxlength="2000"></textarea>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="pf-origin">产地</label>
+                        <input type="text" id="pf-origin" name="origin" maxlength="200">
+                    </div>
+                    <div class="form-field">
+                        <label for="pf-storage">保存方式</label>
+                        <input type="text" id="pf-storage" name="storage" maxlength="200">
+                    </div>
+                    <div class="form-field">
+                        <label for="pf-nutrients">主要营养</label>
+                        <input type="text" id="pf-nutrients" name="nutrients" maxlength="200">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="pf-care">养护方法</label>
+                        <input type="text" id="pf-care" name="care" maxlength="200">
+                    </div>
+                    <div class="form-field">
+                        <label for="pf-color">可选颜色</label>
+                        <input type="text" id="pf-color" name="color" maxlength="200">
+                    </div>
+                </div>
+                <p class="form-error" id="pf-error" role="alert" hidden></p>
+                <footer class="admin-modal-foot">
+                    <button type="button" class="admin-btn" data-close-modal>取消</button>
+                    <button type="submit" class="admin-btn admin-btn-primary" id="pf-submit">保存</button>
+                </footer>
+            </form>
+        </div>
+    </div>
+
+    <!-- 通用确认弹窗 -->
+    <div class="admin-modal" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" hidden>
+        <div class="admin-modal-mask" data-close-modal></div>
+        <div class="admin-modal-panel admin-modal-small">
+            <header class="admin-modal-head">
+                <h3 id="confirm-title">确认操作</h3>
+                <button type="button" class="admin-modal-close" data-close-modal aria-label="关闭">
+                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                </button>
+            </header>
+            <div class="admin-modal-body">
+                <p id="confirm-message"></p>
+                <footer class="admin-modal-foot">
+                    <button type="button" class="admin-btn" data-close-modal>取消</button>
+                    <button type="button" class="admin-btn admin-btn-danger" id="confirm-ok">确认</button>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- 订单详情弹窗 -->
+    <div class="admin-modal" id="order-modal" role="dialog" aria-modal="true" aria-labelledby="order-modal-title" hidden>
+        <div class="admin-modal-mask" data-close-modal></div>
+        <div class="admin-modal-panel">
+            <header class="admin-modal-head">
+                <h3 id="order-modal-title">订单详情</h3>
+                <button type="button" class="admin-modal-close" data-close-modal aria-label="关闭">
+                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                </button>
+            </header>
+            <div class="admin-modal-body" id="order-detail"></div>
+        </div>
+    </div>
+
+    <!-- 重置密码弹窗 -->
+    <div class="admin-modal" id="password-modal" role="dialog" aria-modal="true" aria-labelledby="password-modal-title" hidden>
+        <div class="admin-modal-mask" data-close-modal></div>
+        <div class="admin-modal-panel admin-modal-small">
+            <header class="admin-modal-head">
+                <h3 id="password-modal-title">重置密码</h3>
+                <button type="button" class="admin-modal-close" data-close-modal aria-label="关闭">
+                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                </button>
+            </header>
+            <form id="password-form" class="admin-modal-body" novalidate>
+                <p class="form-hint">重置后该用户的全部登录会话将立即失效。</p>
+                <div class="form-field">
+                    <label for="pm-password">新密码（8-72 位）</label>
+                    <input type="password" id="pm-password" name="password" autocomplete="new-password" required>
+                </div>
+                <div class="form-field">
+                    <label for="pm-confirm">确认新密码</label>
+                    <input type="password" id="pm-confirm" name="confirm" autocomplete="new-password" required>
+                </div>
+                <p class="form-error" id="pm-error" role="alert" hidden></p>
+                <footer class="admin-modal-foot">
+                    <button type="button" class="admin-btn" data-close-modal>取消</button>
+                    <button type="submit" class="admin-btn admin-btn-primary" id="pm-submit">重置</button>
+                </footer>
+            </form>
+        </div>
+    </div>
+
+    <div class="admin-toast" id="admin-toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

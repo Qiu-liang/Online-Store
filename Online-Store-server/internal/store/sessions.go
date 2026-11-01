@@ -29,15 +29,16 @@ func (s *SessionStore) Create(ctx context.Context, userID int64, tokenHash strin
 	return nil
 }
 
-// Validate 校验 token 并返回所属用户；过期或不存在返回 ErrNotFound。
+// Validate 校验 token 并返回所属用户（实时读取最新 role，角色调整立即生效）；
+// 过期或不存在返回 ErrNotFound。
 func (s *SessionStore) Validate(ctx context.Context, tokenHash string) (*models.User, error) {
 	var user models.User
 	var expiresAt string
 	err := s.db.QueryRowContext(ctx, `
-		SELECT u.id, u.username, u.email, u.created_at, se.expires_at
+		SELECT u.id, u.username, u.email, u.role, u.created_at, se.expires_at
 		FROM sessions se JOIN users u ON u.id = se.user_id
 		WHERE se.token_hash = ?
-	`, tokenHash).Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt, &expiresAt)
+	`, tokenHash).Scan(&user.ID, &user.Username, &user.Email, &user.Role, &user.CreatedAt, &expiresAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -57,6 +58,15 @@ func (s *SessionStore) Validate(ctx context.Context, tokenHash string) (*models.
 func (s *SessionStore) Delete(ctx context.Context, tokenHash string) error {
 	if _, err := s.db.ExecContext(ctx, `DELETE FROM sessions WHERE token_hash = ?`, tokenHash); err != nil {
 		return fmt.Errorf("删除会话: %w", err)
+	}
+	return nil
+}
+
+// DeleteByUser 删除某用户的全部会话。密码重置走 UserStore.ResetPassword 的事务版本，
+// 这里留给需要单独注销用户的场景。
+func (s *SessionStore) DeleteByUser(ctx context.Context, userID int64) error {
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM sessions WHERE user_id = ?`, userID); err != nil {
+		return fmt.Errorf("删除用户会话: %w", err)
 	}
 	return nil
 }

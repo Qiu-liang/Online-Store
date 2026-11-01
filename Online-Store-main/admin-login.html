@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="绿源农业管理后台登录。">
+    <title>后台登录 | 绿源农业</title>
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <script src="js/api.js" defer></script>
+    <script src="js/admin-login.js" defer></script>
+</head>
+<body class="admin-login-body">
+    <main class="admin-login-wrap">
+        <div class="admin-login-card">
+            <div class="admin-brand">
+                <i class="fas fa-seedling" aria-hidden="true"></i>
+                <div>
+                    <h1>绿源农业 · 管理后台</h1>
+                    <p>请使用管理员账号登录</p>
+                </div>
+            </div>
+
+            <div class="admin-alert" id="login-alert" role="alert" hidden></div>
+
+            <form id="admin-login-form" novalidate hidden>
+                <div class="form-field">
+                    <label for="login-email">邮箱</label>
+                    <input type="email" id="login-email" name="email" autocomplete="username"
+                           required placeholder="admin@greenfarm.local">
+                </div>
+                <div class="form-field">
+                    <label for="login-password">密码</label>
+                    <input type="password" id="login-password" name="password" autocomplete="current-password"
+                           required placeholder="请输入密码">
+                </div>
+                <button type="submit" class="admin-btn admin-btn-primary admin-btn-block" id="login-submit">
+                    登录后台
+                </button>
+            </form>
+
+            <div class="admin-loading" id="login-loading">
+                <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
+                <span>正在检查登录状态…</span>
+            </div>
+
+            <div class="admin-login-foot">
+                <a href="index.html"><i class="fas fa-arrow-left" aria-hidden="true"></i> 返回商城</a>
+            </div>
+        </div>
+        <noscript><p class="admin-noscript">管理后台需要启用 JavaScript 才能使用。</p></noscript>
+    </main>
+</body>
+</html>

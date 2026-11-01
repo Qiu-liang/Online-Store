@@ -35,11 +35,11 @@ func (s *Server) handleListProducts(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"products": products})
 }
 
-// handleGetProduct 商品详情。
+// handleGetProduct 商品详情。下架商品视为不存在，提示“已下架”。
 func (s *Server) handleGetProduct(w http.ResponseWriter, r *http.Request) {
 	product, err := s.products.GetByID(r.Context(), r.PathValue("id"))
 	if errors.Is(err, store.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "product_not_found", "商品不存在")
+		writeError(w, http.StatusNotFound, "product_not_found", "商品不存在或已下架")
 		return
 	}
 	if err != nil {

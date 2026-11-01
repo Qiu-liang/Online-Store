@@ -11,13 +11,16 @@ import (
 
 // Config 是服务端运行所需的全部配置。
 type Config struct {
-	Port          string        // HTTP 监听端口
-	FrontendDir   string        // 静态前端目录（Online-Store-main）
-	DBPath        string        // SQLite 数据库文件路径
-	SessionTTL    time.Duration // 会话有效期
-	CookieSecure  bool          // 是否为会话 Cookie 开启 Secure（生产环境 HTTPS 下开启）
-	AllowedOrigin string        // 可选：允许跨域携带 Cookie 的来源，如 http://localhost:5500
-	Env           string        // development / production
+	Port            string        // HTTP 监听端口
+	FrontendDir     string        // 静态前端目录（Online-Store-main）
+	DBPath          string        // SQLite 数据库文件路径
+	SessionTTL      time.Duration // 会话有效期
+	AdminSessionTTL time.Duration // 管理员会话有效期
+	AdminEmail      string        // 初始管理员邮箱（首次启动且账号不存在时创建）
+	AdminPassword   string        // 初始管理员密码；为空则随机生成并打印一次日志
+	CookieSecure    bool          // 是否为会话 Cookie 开启 Secure（生产环境 HTTPS 下开启）
+	AllowedOrigin   string        // 可选：允许跨域携带 Cookie 的来源，如 http://localhost:5500
+	Env             string        // development / production
 }
 
 // Load 读取配置：先加载 .env（已存在的环境变量优先），再应用默认值。
@@ -31,14 +34,22 @@ func Load() (*Config, error) {
 		hours = 168
 	}
 
+	adminHours, err := strconv.Atoi(strings.TrimSpace(getEnv("ADMIN_SESSION_TTL_HOURS", "12")))
+	if err != nil || adminHours <= 0 {
+		adminHours = 12
+	}
+
 	return &Config{
-		Port:          getEnv("PORT", "8080"),
-		FrontendDir:   getEnv("FRONTEND_DIR", "../Online-Store-main"),
-		DBPath:        getEnv("DB_PATH", "./data/store.db"),
-		SessionTTL:    time.Duration(hours) * time.Hour,
-		CookieSecure:  strings.EqualFold(getEnv("COOKIE_SECURE", "false"), "true"),
-		AllowedOrigin: strings.TrimSpace(getEnv("ALLOWED_ORIGIN", "")),
-		Env:           getEnv("APP_ENV", "development"),
+		Port:            getEnv("PORT", "8080"),
+		FrontendDir:     getEnv("FRONTEND_DIR", "../Online-Store-main"),
+		DBPath:          getEnv("DB_PATH", "./data/store.db"),
+		SessionTTL:      time.Duration(hours) * time.Hour,
+		AdminSessionTTL: time.Duration(adminHours) * time.Hour,
+		AdminEmail:      strings.ToLower(strings.TrimSpace(getEnv("ADMIN_EMAIL", "admin@greenfarm.local"))),
+		AdminPassword:   getEnv("ADMIN_PASSWORD", ""),
+		CookieSecure:    strings.EqualFold(getEnv("COOKIE_SECURE", "false"), "true"),
+		AllowedOrigin:   strings.TrimSpace(getEnv("ALLOWED_ORIGIN", "")),
+		Env:             getEnv("APP_ENV", "development"),
 	}, nil
 }
 

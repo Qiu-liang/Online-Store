@@ -31,7 +31,7 @@ func (s *OrderStore) CreateFromCart(ctx context.Context, userID int64, shipping 
 	rows, err := tx.QueryContext(ctx, `
 		SELECT p.id, p.title, p.price_cents, p.unit, p.image, ci.quantity
 		FROM cart_items ci JOIN products p ON p.id = ci.product_id
-		WHERE ci.user_id = ?
+		WHERE ci.user_id = ? AND p.active = 1
 		ORDER BY ci.rowid
 	`, userID)
 	if err != nil {
@@ -220,6 +220,122 @@ func (s *OrderStore) listItems(ctx context.Context, orderID string) ([]models.Or
 		items = append(items, item)
 	}
 	return items, rows.Err()
+}
+
+// AdminOrderFilter 是后台订单列表的过滤条件。
+type AdminOrderFilter struct {
+	Status string // "all"（默认）/ 五种状态之一
+	Query  string // 匹配订单号/邮箱/用户名/收货人/电话（LIKE）
+	UserID int64  // >0 时按买家过滤
+	Limit  int
+	Offset int
+}
+
+// AdminList 返回后台订单列表（含买家信息与商品件数），支持状态/搜索/用户过滤与分页。
+func (s *OrderStore) AdminList(ctx context.Context, filter AdminOrderFilter) ([]models.AdminOrder, int64, error) {
+	where := " WHERE 1=1"
+	args := []any{}
+	if filter.Status != "" && filter.Status != "all" {
+		where += ` AND o.status = ?`
+		args = append(args, filter.Status)
+	}
+	if filter.Query != "" {
+		where += ` AND (o.id LIKE ? ESCAPE '\' OR u.email LIKE ? ESCAPE '\' OR u.username LIKE ? ESCAPE '\'
+			OR o.shipping_name LIKE ? ESCAPE '\' OR o.shipping_phone LIKE ? ESCAPE '\')`
+		like := "%" + escapeLike(filter.Query) + "%"
+		args = append(args, like, like, like, like, like)
+	}
+	if filter.UserID > 0 {
+		where += ` AND o.user_id = ?`
+		args = append(args, filter.UserID)
+	}
+
+	var total int64
+	if err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM orders o JOIN users u ON u.id = o.user_id`+where, args...,
+	).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("统计订单数量: %w", err)
+	}
+
+	query := `
+		SELECT o.id, o.user_id, u.username, u.email, o.total_cents, o.status,
+		       o.shipping_name, o.shipping_phone, o.shipping_address, o.created_at,
+		       (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS item_count
+		FROM orders o JOIN users u ON u.id = o.user_id` + where + `
+		ORDER BY o.created_at DESC, o.id DESC LIMIT ? OFFSET ?`
+	args = append(args, filter.Limit, filter.Offset)
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("查询订单列表: %w", err)
+	}
+	defer rows.Close()
+
+	orders := make([]models.AdminOrder, 0)
+	for rows.Next() {
+		var order models.AdminOrder
+		if err := rows.Scan(&order.ID, &order.UserID, &order.Username, &order.UserEmail,
+			&order.TotalCents, &order.Status, &order.ShippingName, &order.ShippingPhone,
+			&order.ShippingAddress, &order.CreatedAt, &order.ItemCount); err != nil {
+			return nil, 0, fmt.Errorf("读取订单列表: %w", err)
+		}
+		orders = append(orders, order)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("读取订单列表: %w", err)
+	}
+	return orders, total, nil
+}
+
+// AdminGetByID 返回后台视角的订单详情（不校验归属，含明细）。
+func (s *OrderStore) AdminGetByID(ctx context.Context, orderID string) (*models.AdminOrder, error) {
+	var order models.AdminOrder
+	err := s.db.QueryRowContext(ctx, `
+		SELECT o.id, o.user_id, u.username, u.email, o.total_cents, o.status,
+		       o.shipping_name, o.shipping_phone, o.shipping_address, o.created_at,
+		       (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS item_count
+		FROM orders o JOIN users u ON u.id = o.user_id
+		WHERE o.id = ?
+	`, orderID).Scan(&order.ID, &order.UserID, &order.Username, &order.UserEmail,
+		&order.TotalCents, &order.Status, &order.ShippingName, &order.ShippingPhone,
+		&order.ShippingAddress, &order.CreatedAt, &order.ItemCount)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("查询订单: %w", err)
+	}
+	items, err := s.listItems(ctx, order.ID)
+	if err != nil {
+		return nil, err
+	}
+	order.Items = items
+	return &order, nil
+}
+
+// UpdateStatus 修改订单状态，返回最新订单数据；订单不存在返回 ErrNotFound。
+func (s *OrderStore) UpdateStatus(ctx context.Context, orderID, status string) (*models.AdminOrder, error) {
+	result, err := s.db.ExecContext(ctx,
+		`UPDATE orders SET status = ? WHERE id = ?`, status, orderID)
+	if err != nil {
+		return nil, fmt.Errorf("更新订单状态: %w", err)
+	}
+	if affected, _ := result.RowsAffected(); affected == 0 {
+		return nil, ErrNotFound
+	}
+	return s.AdminGetByID(ctx, orderID)
+}
+
+// Delete 删除订单；order_items 依赖外键级联删除。
+func (s *OrderStore) Delete(ctx context.Context, orderID string) error {
+	result, err := s.db.ExecContext(ctx, `DELETE FROM orders WHERE id = ?`, orderID)
+	if err != nil {
+		return fmt.Errorf("删除订单: %w", err)
+	}
+	if affected, _ := result.RowsAffected(); affected == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 // generateOrderID 生成形如 ORD-20261031-a1b2c3d4e5f6 的订单号（6 字节随机，碰撞概率可忽略）。

@@ -3,11 +3,51 @@ package models
 
 import "strconv"
 
+// 用户角色。
+const (
+	RoleUser  = "user"
+	RoleAdmin = "admin"
+)
+
+// IsValidRole 校验角色取值。
+func IsValidRole(role string) bool {
+	return role == RoleUser || role == RoleAdmin
+}
+
+// 订单状态：后台可在五种状态间自由切换（不强制状态机，便于人工纠错）。
+const (
+	OrderStatusPending   = "pending"
+	OrderStatusPaid      = "paid"
+	OrderStatusShipped   = "shipped"
+	OrderStatusDone      = "done"
+	OrderStatusCancelled = "cancelled"
+)
+
+// OrderStatuses 是全部合法订单状态。
+var OrderStatuses = []string{
+	OrderStatusPending,
+	OrderStatusPaid,
+	OrderStatusShipped,
+	OrderStatusDone,
+	OrderStatusCancelled,
+}
+
+// IsValidOrderStatus 校验订单状态取值。
+func IsValidOrderStatus(status string) bool {
+	for _, allowed := range OrderStatuses {
+		if status == allowed {
+			return true
+		}
+	}
+	return false
+}
+
 // User 是脱敏后的用户信息（不含密码哈希）。
 type User struct {
 	ID        int64  `json:"id"`
 	Username  string `json:"username"`
 	Email     string `json:"email"`
+	Role      string `json:"role"`
 	CreatedAt string `json:"createdAt"`
 }
 
@@ -19,6 +59,7 @@ type Category struct {
 }
 
 // Product 是商品完整信息。PriceText 由 PriceCents + Unit 生成，用于直接展示。
+// Active 为 false 表示已下架，商城侧不可见。
 type Product struct {
 	ID          string  `json:"id"`
 	Category    string  `json:"category"`
@@ -36,6 +77,8 @@ type Product struct {
 	Color       string  `json:"color"`
 	Rating      float64 `json:"rating"`
 	Type        string  `json:"type"`
+	Active      bool    `json:"active"`
+	SortOrder   int64   `json:"sortOrder"`
 }
 
 // CartItem 是购物车中的一项，价格信息来自商品表当前数据。
@@ -92,6 +135,42 @@ type Order struct {
 	ShippingAddress string      `json:"shippingAddress"`
 	CreatedAt       string      `json:"createdAt"`
 	Items           []OrderItem `json:"items"`
+}
+
+// AdminUser 是后台用户列表条目：用户信息 + 订单聚合统计。
+type AdminUser struct {
+	User
+	OrderCount      int64  `json:"orderCount"`
+	TotalSpentCents int64  `json:"totalSpentCents"`
+	LastOrderAt     string `json:"lastOrderAt"`
+}
+
+// AdminOrder 是后台视角的订单：带买家信息与商品件数。
+type AdminOrder struct {
+	ID              string      `json:"id"`
+	UserID          int64       `json:"userId"`
+	Username        string      `json:"username"`
+	UserEmail       string      `json:"userEmail"`
+	TotalCents      int64       `json:"totalCents"`
+	Status          string      `json:"status"`
+	ShippingName    string      `json:"shippingName"`
+	ShippingPhone   string      `json:"shippingPhone"`
+	ShippingAddress string      `json:"shippingAddress"`
+	CreatedAt       string      `json:"createdAt"`
+	ItemCount       int64       `json:"itemCount"`
+	Items           []OrderItem `json:"items,omitempty"`
+}
+
+// AdminStats 是后台概览统计。销售额与用户消费均不含已取消订单。
+type AdminStats struct {
+	UserCount          int64 `json:"userCount"`
+	AdminCount         int64 `json:"adminCount"`
+	ProductCount       int64 `json:"productCount"`
+	ActiveProductCount int64 `json:"activeProductCount"`
+	OrderCount         int64 `json:"orderCount"`
+	PendingOrderCount  int64 `json:"pendingOrderCount"`
+	TodayOrderCount    int64 `json:"todayOrderCount"`
+	RevenueCents       int64 `json:"revenueCents"`
 }
 
 // FormatPrice 把整数分格式化为展示文本，例如 2680 + "500g" -> "¥26.8/500g"。

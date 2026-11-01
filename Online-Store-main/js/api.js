@@ -68,15 +68,20 @@ window.api = (function () {
     }
 
     // 当前会话用户：每页只请求一次 /api/auth/me，各模块共享同一个 Promise。
-    // 请求失败（未登录或服务不可用）时返回 null，不抛错。
+    // 失败（未登录、会话过期或服务不可用）时返回 { user: null, error }，不抛错；
+    // 调用方可用 error.status 区分 401 与网络/服务端错误。
     let sessionPromise = null;
-    function session() {
+    function sessionState() {
         if (!sessionPromise) {
             sessionPromise = request('/api/auth/me')
-                .then((data) => (data && data.user) || null)
-                .catch(() => null);
+                .then((data) => ({ user: (data && data.user) || null, error: null }))
+                .catch((error) => ({ user: null, error }));
         }
         return sessionPromise;
+    }
+
+    function session() {
+        return sessionState().then((state) => state.user);
     }
 
     return {
@@ -88,6 +93,7 @@ window.api = (function () {
         escapeHtml,
         cssUrl,
         session,
+        sessionState,
         // 金额统一为“分”，展示时转成两位小数。
         formatMoney: (cents) => `¥${(cents / 100).toFixed(2)}`
     };

@@ -16,28 +16,33 @@ import (
 
 // Server 聚合配置、存储与路由。
 type Server struct {
-	cfg         *config.Config
-	logger      *slog.Logger
-	users       *store.UserStore
-	sessions    *store.SessionStore
-	products    *store.ProductStore
-	carts       *store.CartStore
-	orders      *store.OrderStore
-	authLimiter *rateLimiter
+	cfg              *config.Config
+	logger           *slog.Logger
+	users            *store.UserStore
+	sessions         *store.SessionStore
+	products         *store.ProductStore
+	carts            *store.CartStore
+	orders           *store.OrderStore
+	stats            *store.StatsStore
+	authLimiter      *rateLimiter // 客户登录/注册限流
+	adminAuthLimiter *rateLimiter // 管理员登录独立限流
 }
 
 // NewServer 组装 Server。
 func NewServer(cfg *config.Config, logger *slog.Logger, users *store.UserStore, sessions *store.SessionStore,
-	products *store.ProductStore, carts *store.CartStore, orders *store.OrderStore) *Server {
+	products *store.ProductStore, carts *store.CartStore, orders *store.OrderStore,
+	stats *store.StatsStore) *Server {
 	return &Server{
-		cfg:         cfg,
-		logger:      logger,
-		users:       users,
-		sessions:    sessions,
-		products:    products,
-		carts:       carts,
-		orders:      orders,
-		authLimiter: newRateLimiter(10, 15*time.Minute),
+		cfg:              cfg,
+		logger:           logger,
+		users:            users,
+		sessions:         sessions,
+		products:         products,
+		carts:            carts,
+		orders:           orders,
+		stats:            stats,
+		authLimiter:      newRateLimiter(10, 15*time.Minute),
+		adminAuthLimiter: newRateLimiter(10, 15*time.Minute),
 	}
 }
 
@@ -71,15 +76,50 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/orders", s.withAuth(s.handleListOrders))
 	mux.HandleFunc("GET /api/orders/{id}", s.withAuth(s.handleGetOrder))
 
+	// 后台认证（独立限流）
+	mux.HandleFunc("POST /api/admin/auth/login", s.withAdminRateLimit(s.handleAdminLogin))
+	mux.HandleFunc("GET /api/admin/auth/me", s.withAdmin(s.handleAdminMe))
+
+	// 后台概览
+	mux.HandleFunc("GET /api/admin/stats", s.withAdmin(s.handleAdminStats))
+
+	// 后台商品
+	mux.HandleFunc("GET /api/admin/products", s.withAdmin(s.handleAdminListProducts))
+	mux.HandleFunc("POST /api/admin/products", s.withAdmin(s.handleAdminCreateProduct))
+	mux.HandleFunc("GET /api/admin/products/{id}", s.withAdmin(s.handleAdminGetProduct))
+	mux.HandleFunc("PATCH /api/admin/products/{id}", s.withAdmin(s.handleAdminUpdateProduct))
+	mux.HandleFunc("DELETE /api/admin/products/{id}", s.withAdmin(s.handleAdminDeleteProduct))
+
+	// 后台用户
+	mux.HandleFunc("GET /api/admin/users", s.withAdmin(s.handleAdminListUsers))
+	mux.HandleFunc("PATCH /api/admin/users/{id}", s.withAdmin(s.handleAdminUpdateRole))
+	mux.HandleFunc("POST /api/admin/users/{id}/password", s.withAdmin(s.handleAdminResetPassword))
+	mux.HandleFunc("DELETE /api/admin/users/{id}", s.withAdmin(s.handleAdminDeleteUser))
+
+	// 后台订单
+	mux.HandleFunc("GET /api/admin/orders", s.withAdmin(s.handleAdminListOrders))
+	mux.HandleFunc("GET /api/admin/orders/{id}", s.withAdmin(s.handleAdminGetOrder))
+	mux.HandleFunc("PATCH /api/admin/orders/{id}", s.withAdmin(s.handleAdminUpdateOrderStatus))
+	mux.HandleFunc("DELETE /api/admin/orders/{id}", s.withAdmin(s.handleAdminDeleteOrder))
+
 	// 未匹配的 API 路径返回 JSON 404
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "接口不存在")
 	})
 
+	// /admin 302 跳转到 /admin.html，方便直接输入目录地址
+	mux.HandleFunc("GET /admin", s.redirectToAdminHTML)
+	mux.HandleFunc("GET /admin/", s.redirectToAdminHTML)
+
 	// 静态前端
 	mux.Handle("/", s.staticHandler())
 
 	return s.withRecover(s.withSecureHeaders(s.withLogging(s.withSameOrigin(mux))))
+}
+
+// redirectToAdminHTML 把 /admin 与 /admin/ 重定向到管理后台页面。
+func (s *Server) redirectToAdminHTML(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/admin.html", http.StatusFound)
 }
 
 // staticHandler 托管前端静态目录，并为不同资源设置缓存策略。

@@ -1,5 +1,7 @@
 /* 全站页脚 */
 footer {
+    flex-shrink: 0;
+    margin-top: auto;
     padding: 50px var(--page-padding) 30px;
     background: #2a3b36;
     color: #e0e0e0;

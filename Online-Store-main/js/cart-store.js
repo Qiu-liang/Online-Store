@@ -19,7 +19,11 @@ window.greenCart = (function () {
 
     let mode = 'guest';
     let items = [];
+    let sessionError = null;
     const listeners = new Set();
+    // 服务端数量更新按商品串行发送，并把连续点击合并到最新目标值，避免响应乱序/丢步。
+    const pendingQuantities = new Map();
+    const quantityWorkers = new Map();
 
     function parsePrice(priceText) {
         const match = String(priceText || '').match(/[\d.]+/);
@@ -105,10 +109,16 @@ window.greenCart = (function () {
             return;
         }
         try {
-            await api.post('/api/cart/merge', {
+            const data = await api.post('/api/cart/merge', {
                 items: pending.map((item) => ({ productId: item.id, quantity: item.quantity }))
             });
-            await loadServerCart();
+            // 合并响应已经是操作后的完整购物车，直接采用，避免额外 GET 失败导致本地数据
+            // 未清除、下次加载重复累加数量。
+            if (data && data.cart) {
+                items = ((data.cart.items) || []).map(mapServerItem);
+            } else {
+                await loadServerCart();
+            }
             clearLocal();
             console.info('已自动合并上次未同步的游客购物车。');
         } catch (error) {
@@ -117,8 +127,10 @@ window.greenCart = (function () {
     }
 
     async function init() {
-        // 会话请求由 api.session() 记忆化，与 auth-nav 共享同一次 /api/auth/me。
-        const user = await api.session();
+        // 会话请求由 api.sessionState() 记忆化，与 auth-nav 共享同一次 /api/auth/me。
+        const state = await api.sessionState();
+        const user = state.user;
+        sessionError = state.error;
 
         mode = user ? 'server' : 'guest';
         if (mode === 'server') {
@@ -126,6 +138,7 @@ window.greenCart = (function () {
                 await loadServerCart();
             } catch (error) {
                 console.warn('服务端购物车读取失败，已回退为游客模式。', error);
+                sessionError = error;
                 mode = 'guest';
                 loadLocal();
             }
@@ -175,36 +188,78 @@ window.greenCart = (function () {
         notify();
     }
 
-    async function updateQuantity(productId, quantity) {
+    async function flushQuantityUpdates(productId) {
+        while (pendingQuantities.has(productId)) {
+            const desired = pendingQuantities.get(productId);
+            pendingQuantities.delete(productId);
+
+            let data;
+            try {
+                data = await api.patch(`/api/cart/items/${encodeURIComponent(productId)}`, { quantity: desired });
+            } catch (error) {
+                pendingQuantities.delete(productId);
+                if (error.status === 404) {
+                    await refresh().catch(() => { /* 交给下次刷新 */ });
+                    return;
+                }
+                await refresh().catch(() => { /* 保留原始错误 */ });
+                throw error;
+            }
+
+            items = ((data.cart && data.cart.items) || []).map(mapServerItem);
+            // 请求期间用户可能又点了多次：把更晚的目标值重新覆盖到乐观 UI 上。
+            const queued = pendingQuantities.get(productId);
+            if (queued !== undefined) {
+                const current = findItem(productId);
+                if (current) {
+                    current.quantity = queued;
+                }
+            }
+            notify();
+        }
+    }
+
+    function ensureQuantityWorker(productId) {
+        if (!quantityWorkers.has(productId)) {
+            const worker = flushQuantityUpdates(productId).finally(() => {
+                quantityWorkers.delete(productId);
+                if (pendingQuantities.has(productId)) {
+                    ensureQuantityWorker(productId);
+                }
+            });
+            quantityWorkers.set(productId, worker);
+        }
+        return quantityWorkers.get(productId);
+    }
+
+    function updateQuantity(productId, quantity) {
         const parsed = parseInt(quantity, 10);
         if (Number.isNaN(parsed)) {
-            return;
+            return Promise.resolve();
         }
         // 两种模式统一钳制到 1–99，越界请求不会发到后端。
         const next = Math.min(MAX_QUANTITY, Math.max(MIN_QUANTITY, parsed));
-
-        if (mode === 'server') {
-            try {
-                const data = await api.patch(`/api/cart/items/${encodeURIComponent(productId)}`, { quantity: next });
-                items = ((data.cart && data.cart.items) || []).map(mapServerItem);
-            } catch (error) {
-                if (error.status === 404) {
-                    await refresh();
-                    return;
-                }
-                throw error;
-            }
-        } else {
-            const item = findItem(productId);
-            if (item) {
-                item.quantity = next;
-                saveLocal();
-            }
+        const item = findItem(productId);
+        if (!item) {
+            return Promise.resolve();
         }
+
+        // 先更新本地展示，保证连续点击时每次都基于上一跳后的数量计算。
+        item.quantity = next;
+
+        if (mode === 'guest') {
+            saveLocal();
+            notify();
+            return Promise.resolve();
+        }
+
+        pendingQuantities.set(productId, next);
         notify();
+        return ensureQuantityWorker(productId);
     }
 
     async function removeItem(productId) {
+        pendingQuantities.delete(productId);
         if (mode === 'server') {
             try {
                 const data = await api.del(`/api/cart/items/${encodeURIComponent(productId)}`);
@@ -258,6 +313,7 @@ window.greenCart = (function () {
         clearLocal,
         get items() { return items; },
         get mode() { return mode; },
+        get sessionError() { return sessionError; },
         MIN_QUANTITY,
         MAX_QUANTITY,
         getCount,

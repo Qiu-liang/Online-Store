@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     username      TEXT    NOT NULL,
     email         TEXT    NOT NULL UNIQUE,
     password_hash TEXT    NOT NULL,
+    role          TEXT    NOT NULL DEFAULT 'user',
     created_at    TEXT    NOT NULL
 );
 
@@ -35,6 +36,7 @@ CREATE TABLE IF NOT EXISTS products (
     color         TEXT    NOT NULL DEFAULT '',
     rating        REAL    NOT NULL DEFAULT 0,
     type          TEXT    NOT NULL DEFAULT '',
+    active        INTEGER NOT NULL DEFAULT 1,
     sort_order    INTEGER NOT NULL DEFAULT 0
 );
 
@@ -67,7 +69,15 @@ CREATE TABLE IF NOT EXISTS order_items (
     PRIMARY KEY (order_id, product_id)
 );
 
+-- 后台用键值表：目前仅用于 products_seeded 标记，保证商品种子只在首次启动写入。
+CREATE TABLE IF NOT EXISTS app_meta (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_sessions_user     ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expiry   ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_slug);
 CREATE INDEX IF NOT EXISTS idx_orders_user       ON orders(user_id);
+-- 注意：涉及新增列（role/active）的索引不能写在这里——旧库此时还没有这些列，
+-- 它们由 database.go 的 ensureIndexes 在补列之后创建。

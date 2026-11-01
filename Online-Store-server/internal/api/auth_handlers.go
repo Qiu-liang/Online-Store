@@ -67,7 +67,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.startSession(w, r, user.ID); err != nil {
+	if err := s.startSession(w, r, user.ID, s.cfg.SessionTTL); err != nil {
 		s.logger.Error("创建会话失败", "error", err)
 		writeError(w, http.StatusInternalServerError, "internal_error", "服务器内部错误")
 		return
@@ -106,7 +106,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.startSession(w, r, user.ID); err != nil {
+	if err := s.startSession(w, r, user.ID, s.cfg.SessionTTL); err != nil {
 		s.logger.Error("创建会话失败", "error", err)
 		writeError(w, http.StatusInternalServerError, "internal_error", "服务器内部错误")
 		return
@@ -130,15 +130,15 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, userResponse{User: currentUser(r)})
 }
 
-// startSession 创建会话记录并写入 Cookie。
-func (s *Server) startSession(w http.ResponseWriter, r *http.Request, userID int64) error {
+// startSession 创建会话记录并写入 Cookie；管理员登录使用更短的 TTL。
+func (s *Server) startSession(w http.ResponseWriter, r *http.Request, userID int64, ttl time.Duration) error {
 	token, tokenHash, err := auth.NewToken()
 	if err != nil {
 		return err
 	}
-	if err := s.sessions.Create(r.Context(), userID, tokenHash, time.Now().Add(s.cfg.SessionTTL)); err != nil {
+	if err := s.sessions.Create(r.Context(), userID, tokenHash, time.Now().Add(ttl)); err != nil {
 		return err
 	}
-	auth.SetCookie(w, token, s.cfg.SessionTTL, s.cfg.CookieSecure)
+	auth.SetCookie(w, token, ttl, s.cfg.CookieSecure)
 	return nil
 }

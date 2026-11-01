@@ -20,12 +20,12 @@ type CartStore struct {
 
 func NewCartStore(db *sql.DB) *CartStore { return &CartStore{db: db} }
 
-// GetCart 返回用户购物车（含金额汇总）。
+// GetCart 返回用户购物车（含金额汇总）。下架商品被静默隐藏，重新上架后恢复可见。
 func (s *CartStore) GetCart(ctx context.Context, userID int64) (*models.Cart, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT p.id, p.title, p.price_cents, p.unit, p.image, ci.quantity
 		FROM cart_items ci JOIN products p ON p.id = ci.product_id
-		WHERE ci.user_id = ?
+		WHERE ci.user_id = ? AND p.active = 1
 		ORDER BY ci.rowid
 	`, userID)
 	if err != nil {
@@ -63,8 +63,7 @@ func (s *CartStore) AddItem(ctx context.Context, userID int64, productID string,
 
 	result, err := s.db.ExecContext(ctx, `
 		INSERT INTO cart_items (user_id, product_id, quantity)
-		SELECT ?, ?, ?
-		WHERE EXISTS (SELECT 1 FROM products WHERE id = ?)
+		SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM products WHERE id = ? AND active = 1)
 		ON CONFLICT(user_id, product_id)
 		DO UPDATE SET quantity = MIN(cart_items.quantity + excluded.quantity, ?)
 	`, userID, productID, quantity, productID, maxQuantity)
@@ -129,7 +128,7 @@ func (s *CartStore) MergeItems(ctx context.Context, userID int64, items []models
 			}
 			if _, err := tx.ExecContext(ctx, `
 				INSERT INTO cart_items (user_id, product_id, quantity)
-				SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM products WHERE id = ?)
+				SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM products WHERE id = ? AND active = 1)
 				ON CONFLICT(user_id, product_id)
 				DO UPDATE SET quantity = MIN(cart_items.quantity + excluded.quantity, ?)
 			`, userID, item.ProductID, quantity, item.ProductID, maxQuantity); err != nil {

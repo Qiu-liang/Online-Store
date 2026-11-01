@@ -14,6 +14,7 @@
     const contentContainer = document.getElementById('content-container');
     const modal = document.getElementById('product-detail-modal');
     const closeButton = document.getElementById('close-modal');
+    const detailMain = document.querySelector('.detail-main');
     const detailImage = document.getElementById('detail-image');
     const detailTitle = document.getElementById('detail-title');
     const detailRating = document.getElementById('detail-rating');
@@ -61,10 +62,13 @@
     function productCard(product) {
         return `
             <article class="product-card fade-in" data-id="${escapeHtml(product.id)}">
-                <div class="product-image" style="background-image: ${cssUrl(product.image)}"
-                     role="img" aria-label="${escapeHtml(product.title)}"></div>
+                <img class="product-image" src="${escapeHtml(product.image)}"
+                     alt="${escapeHtml(product.title)}" loading="lazy" decoding="async">
                 <div class="product-info">
-                    <h3 class="product-title">${escapeHtml(product.title)}</h3>
+                    <h3 class="product-title">
+                        <button type="button" class="product-title-btn" data-id="${escapeHtml(product.id)}"
+                                aria-label="查看 ${escapeHtml(product.title)} 详情">${escapeHtml(product.title)}</button>
+                    </h3>
                     <div class="rating">
                         ${renderStars(product.rating)}
                         <span>${escapeHtml(product.rating)}</span>
@@ -175,6 +179,24 @@
         `;
     }
 
+    const pageRegions = Array.from(document.querySelectorAll('body > nav, body > main, body > footer'));
+
+    function setPageInert(inert) {
+        pageRegions.forEach((region) => {
+            if (inert) {
+                region.setAttribute('inert', '');
+            } else {
+                region.removeAttribute('inert');
+            }
+        });
+    }
+
+    function modalFocusable() {
+        return Array.from(modal.querySelectorAll(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )).filter((element) => element.getClientRects().length > 0);
+    }
+
     function openProductModal(productId) {
         const product = state.products.find((item) => item.id === productId);
         if (!product) {
@@ -182,8 +204,14 @@
         }
 
         state.activeProduct = product;
-        state.lastFocusedElement = document.activeElement;
+        let returnFocus = document.activeElement;
+        if (!returnFocus || returnFocus === document.body) {
+            returnFocus = Array.from(contentContainer.querySelectorAll('.product-title-btn'))
+                .find((button) => button.dataset.id === product.id) || null;
+        }
+        state.lastFocusedElement = returnFocus;
 
+        detailMain.scrollTop = 0;
         detailImage.style.backgroundImage = cssUrl(product.image);
         detailImage.setAttribute('aria-label', `${product.title}产品图`);
         detailTitle.textContent = product.title;
@@ -191,13 +219,14 @@
         detailPrice.textContent = product.priceText;
         detailRating.innerHTML = `
             ${renderStars(product.rating)}
-            <span>${escapeHtml(product.rating)} (128条评价)</span>
+            <span>${escapeHtml(product.rating)}</span>
         `;
         detailMeta.innerHTML = buildMeta(product);
 
         modal.classList.add('active');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
+        setPageInert(true);
         closeButton.focus();
         // visibility 过渡尚未推进时（低性能设备/后台标签页）同步 focus 可能落空，短暂延迟后补一次。
         if (document.activeElement !== closeButton) {
@@ -213,22 +242,36 @@
         modal.classList.remove('active');
         modal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
+        setPageInert(false);
         state.activeProduct = null;
 
         if (state.lastFocusedElement) {
             state.lastFocusedElement.focus();
             state.lastFocusedElement = null;
+        } else {
+            closeButton.blur();
         }
     }
 
-    function showToast(message) {
+    function showToast(message, type) {
+        let region = document.getElementById('toast-region');
+        if (!region) {
+            region = document.createElement('div');
+            region.id = 'toast-region';
+            region.className = 'toast-region';
+            region.setAttribute('aria-live', 'polite');
+            region.setAttribute('aria-atomic', 'false');
+            document.body.appendChild(region);
+        }
+
+        const isError = type === 'error';
         const toast = document.createElement('div');
-        toast.className = 'toast';
+        toast.className = isError ? 'toast toast-error' : 'toast';
         toast.innerHTML = `
-            <i class="fas fa-check-circle" aria-hidden="true"></i>
+            <i class="fas ${isError ? 'fa-circle-exclamation' : 'fa-check-circle'}" aria-hidden="true"></i>
             <span>${escapeHtml(message)}</span>
         `;
-        document.body.appendChild(toast);
+        region.appendChild(toast);
 
         setTimeout(() => {
             toast.classList.add('is-hiding');
@@ -255,7 +298,7 @@
             }
             showToast(`已添加 ${product.title} 到购物车`);
         } catch (error) {
-            showToast(error.message || '加入购物车失败');
+            showToast(error.message || '加入购物车失败', 'error');
         }
     }
 
@@ -267,8 +310,19 @@
             return;
         }
 
+        const titleButton = event.target.closest('.product-title-btn');
+        if (titleButton) {
+            openProductModal(titleButton.dataset.id);
+            return;
+        }
+
         const card = event.target.closest('.product-card');
         if (card) {
+            // 卡片本身不可聚焦；先聚焦标题按钮，关闭弹窗后焦点能回到原卡片。
+            const trigger = card.querySelector('.product-title-btn');
+            if (trigger) {
+                trigger.focus();
+            }
             openProductModal(card.dataset.id);
         }
     });
@@ -300,8 +354,39 @@
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && modal.classList.contains('active')) {
+        if (!modal.classList.contains('active')) {
+            return;
+        }
+
+        if (event.key === 'Escape') {
             closeModal();
+            return;
+        }
+
+        if (event.key !== 'Tab') {
+            return;
+        }
+
+        const focusable = modalFocusable();
+        if (focusable.length === 0) {
+            event.preventDefault();
+            return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!modal.contains(document.activeElement)) {
+            event.preventDefault();
+            first.focus();
+            return;
+        }
+
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
         }
     });
 
@@ -321,6 +406,8 @@
         }
     }
 
+    // 先显示加载态，避免等待会话/购物车初始化时页面空白。
+    renderLoading();
     // 购物车模块就绪后再渲染，避免登录状态下首次加购落入本地存储。
     cart.init().finally(() => {
         start();
