@@ -61,7 +61,7 @@ func (s *SessionStore) Delete(ctx context.Context, tokenHash string) error {
 	return nil
 }
 
-// DeleteExpired 清理过期会话，服务启动时调用一次。
+// DeleteExpired 清理过期会话，服务启动时调用一次，之后由后台任务每小时调用。
 func (s *SessionStore) DeleteExpired(ctx context.Context) error {
 	if _, err := s.db.ExecContext(ctx,
 		`DELETE FROM sessions WHERE expires_at <= ?`, time.Now().UTC().Format(time.RFC3339),
