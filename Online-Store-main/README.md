@@ -102,7 +102,3 @@ go run ./cmd/server
 
 - 前端：HTML5、CSS3（Flexbox / Grid、CSS 变量、响应式）、原生 JavaScript（无框架、无构建步骤）、Font Awesome 6（CDN）
 - 后端：Go 标准库 `net/http`、`modernc.org/sqlite`（纯 Go）、`golang.org/x/crypto/bcrypt`、SQLite WAL
-
-## 许可证
-
-本项目采用 [MIT 许可证](../LICENSE)。
