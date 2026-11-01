@@ -57,7 +57,7 @@ Online-Store-server/         # Go 后端（详见其 README.md）
 
 ## 本地运行
 
-需要 Go 1.24+（首次可用 `brew install go`）。
+需要 Go 1.26+（首次可用 `brew install go`，与 `go.mod` 声明一致）。
 
 ```bash
 cd Online-Store-server
