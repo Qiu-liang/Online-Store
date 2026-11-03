@@ -12,7 +12,7 @@ import (
 // Config 是服务端运行所需的全部配置。
 type Config struct {
 	Port            string        // HTTP 监听端口
-	FrontendDir     string        // 静态前端目录（Online-Store-main）
+	FrontendDir     string        // 静态前端目录（项目前端目录）
 	DBPath          string        // SQLite 数据库文件路径
 	SessionTTL      time.Duration // 会话有效期
 	AdminSessionTTL time.Duration // 管理员会话有效期

@@ -1,4 +1,4 @@
-// 命令 server 启动绿源农业后端服务。
+// 命令 server 启动项目后端服务。
 package main
 
 import (
