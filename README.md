@@ -11,18 +11,70 @@
 
 ```text
 Online-Store/
-├── Online-Store-main/      # 前端：6 个商城页面 + 后台 2 页 + css/ + js/ + images/
-│   ├── index.html          # 首页
-│   ├── products.html       # 产品中心
-│   ├── about.html          # 关于我们
-│   ├── shopping.html       # 购物车
-│   ├── login.html          # 登录 / 注册
-│   ├── account.html        # 我的账户
-│   ├── admin.html          # 管理后台（概览 / 商品 / 用户 / 订单）
-│   └── admin-login.html    # 管理员登录
-└── Online-Store-server/    # 后端：cmd/server 入口 + internal/ 分层 + data/ 数据库
-    └── docs/API.md         # 完整接口文档
+├── README.md                        # 项目总览（本文件）
+├── LICENSE                          # MIT 许可证
+├── Online-Store-main/               # 前端：6 个商城页面 + 后台 2 页 + css/ + js/ + images/
+│   ├── index.html                   # 首页
+│   ├── products.html                # 产品中心
+│   ├── about.html                   # 关于我们
+│   ├── shopping.html                # 购物车
+│   ├── login.html                   # 登录 / 注册
+│   ├── account.html                 # 我的账户
+│   ├── admin.html                   # 管理后台（概览 / 商品 / 用户 / 订单）
+│   └── admin-login.html             # 管理员登录
+└── Online-Store-server/             # 后端：Go 模块 online-store/server
+    ├── cmd/server/main.go           # 启动入口：配置 → 建库建表 → 初始管理员 → 路由 → 优雅退出
+    ├── internal/
+    │   ├── config/config.go         # 环境变量与 .env 加载（端口、前端目录、库路径、会话时长）
+    │   ├── database/                # 打开库、建表与补列迁移、首次启动灌种子
+    │   │   ├── database.go          # 连接初始化、执行 schema、幂等迁移、种子只写一次
+    │   │   ├── schema.sql           # 表结构定义（go:embed 编译进二进制）
+    │   │   └── seed_products.json   # 商品 / 分类种子（go:embed，仅首次启动写入）
+    │   ├── auth/                    # 密码哈希与会话 Cookie
+    │   │   ├── password.go          # bcrypt 哈希与校验（cost 12，含防时序枚举的哑校验）
+    │   │   └── session.go           # 生成并哈希 token、读写 Cookie、清理过期会话
+    │   ├── models/models.go         # API 与存储层共用结构体、金额（分）与展示文本转换
+    │   ├── store/                   # SQL 访问层：按资源拆分，不感知 HTTP
+    │   │   ├── users.go             # 用户查询 / 创建 / 改角色 / 重置密码 / 删除
+    │   │   ├── sessions.go          # 会话读写与过期清理
+    │   │   ├── products.go          # 分类与商品：列表、详情、后台搜索分页、上下架
+    │   │   ├── cart.go              # 服务端购物车与游客购物车合并
+    │   │   ├── orders.go            # 下单事务、订单快照、列表与状态变更
+    │   │   └── stats.go             # 后台概览统计与最近订单
+    │   └── api/                     # HTTP 层：路由、中间件、处理器、集成测试
+    │       ├── router.go            # 注册全部商城与后台路由、/admin 跳转、静态托管
+    │       ├── middleware.go        # 鉴权、管理员校验、限流、同源校验、安全头、日志、panic 恢复
+    │       ├── response.go          # 统一 JSON 响应与错误结构
+    │       ├── validate.go          # 商城侧请求解析与字段校验
+    │       ├── admin_validate.go    # 后台请求校验（商品 / 用户 / 订单）
+    │       ├── pagination.go        # 后台列表分页参数解析
+    │       ├── *_handlers.go        # 处理器：auth、product、cart、order、admin_{auth,product,user,order}
+    │       └── *_test.go            # 集成测试：api_test.go 商城、admin_test.go 后台权限
+    ├── docs/API.md                  # 完整接口文档（字段、校验规则、错误码、curl 示例）
+    ├── data/                        # 运行时 SQLite（store.db + WAL/SHM，已忽略，仅留 .gitkeep）
+    ├── bin/                         # make build 产物（已忽略）
+    ├── Makefile                     # run / test / vet / fmt / build / clean
+    ├── .env.example                 # 配置样例，复制为 .env 后生效
+    ├── go.mod / go.sum              # 依赖 modernc.org/sqlite、golang.org/x/crypto
+    └── README.md                    # 后端详细文档（配置、表结构、安全设计、测试）
 ```
+
+### 后端分层
+
+代码按职责分为四层，依赖方向单一（`api → store → database`）；`config` / `auth` / `models` 作为横切支撑被各层复用。配置项、表结构与安全设计的完整说明见 [后端 README](Online-Store-server/README.md)，接口细节见 [API 文档](Online-Store-server/docs/API.md)。
+
+| 层 | 职责 | 不做什么 |
+| --- | --- | --- |
+| `cmd/server` | 装配依赖、启动 HTTP 服务、监听信号并优雅关闭；首次启动创建管理员 | 不含业务逻辑 |
+| `internal/api` | 解析请求、校验参数、鉴权与限流、组织 JSON 响应；同时托管前端静态文件 | 不直接写 SQL |
+| `internal/store` | 封装全部 SQL 与事务（下单、合并购物车、重置密码等原子操作） | 不感知 HTTP |
+| `internal/database` | 建库、建表与幂等迁移、嵌入并写入种子数据 | 不含查询逻辑 |
+
+三条链路可作为阅读入口：
+
+- **启动**：`main.go` → `config.Load` → `database.Open`（建表 + 迁移 + 种子）→ `bootstrapAdmin` → `api.NewServer` → `Handler()` 挂载路由 → 监听并等待退出信号。
+- **一次业务请求**：`router.go` 匹配路由 → 中间件链（安全头 / 日志 / 同源校验 / `withAuth` 或 `withAdmin` / 限流）→ `*_handlers.go` 解析校验 → `store/*.go` 执行 SQL → `response.go` 输出统一 JSON。
+- **静态页面**：未被 `/api/` 匹配的请求交给 `staticHandler()`，从 `FRONTEND_DIR`（默认 `../Online-Store-main`）读取文件；目录路径返回 404，HTML/CSS/JS 使用协商缓存，图片缓存一天。
 
 ## 功能特性
 
